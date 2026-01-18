@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickSurvey</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 dark:bg-gray-900 transition duration-500 ease-in-out">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-center mb-6 text-gray-800 dark:text-white">Bienvenue sur QuickSurvey</h1>
+        <p class="text-center text-gray-600 dark:text-gray-300 mb-8">Créez des sondages en ligne simples et rapides.</p>
+
+        <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 fade-in">
+            <form id="surveyForm">
+                <div class="mb-4">
+                    <label for="question" class="block text-gray-700 dark:text-gray-300 mb-2">Votre question :</label>
+                    <input type="text" id="question" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 leading-tight focus:outline-none focus:shadow-outline" placeholder="Entrez votre question ici" required>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 dark:text-gray-300 mb-2">Type de question :</label>
+                    <select id="questionType" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 leading-tight focus:outline-none focus:shadow-outline" required>
+                        <option value="multipleChoice">Choix multiple</option>
+                        <option value="likertScale">Échelle de Likert</option>
+                        <option value="openEnded">Réponse ouverte</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 dark:text-gray-300 mb-2">Ajouter des réponses (séparées par des virgules) :</label>
+                    <input type="text" id="options" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 leading-tight focus:outline-none focus:shadow-outline" placeholder="Réponses pour le choix multiple" required>
+                </div>
+
+                <button type="submit" class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Créer le sondage</button>
+            </form>
+        </div>
+
+        <div class="results mt-8">
+            <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Résultats</h2>
+            <div id="resultChart" class="mt-4 bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6"></div>
+        </div>
+    </div>
+
+    <script>
+        const surveyForm = document.getElementById('surveyForm');
+        surveyForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const question = document.getElementById('question').value;
+            const questionType = document.getElementById('questionType').value;
+            const options = document.getElementById('options').value.split(',');
+
+            const resultDiv = document.getElementById('resultChart');
+            resultDiv.innerHTML = `<h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">${question}</h3>`;
+            if (questionType === 'multipleChoice') {
+                resultDiv.innerHTML += `<ul class="list-disc pl-5 text-gray-600 dark:text-gray-300">${options.map(option => `<li>${option.trim()}</li>`).join('')}</ul>`;
+            }
+            // Ici, vous pourriez ajouter plus logiques pour les autres types de questions
+        });
+    </script>
+</body>
+
+</html>
