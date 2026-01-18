@@ -6,73 +6,89 @@ from dotenv import load_dotenv
 load_dotenv()
 llm = ChatOpenAI(model="gpt-4o-mini")
 
-# --- FONCTION DE DEPLOIEMENT MULTI-DOSSIERS ---
-def deploy_to_web(content, idea_name):
-    # Création d'un nom de dossier basé sur la date et l'idée
-    date_str = datetime.datetime.now().strftime("%Y-%m-%d")
-    clean_name = idea_name.lower().replace(" ", "-")[:15]
-    folder_name = f"{date_str}-{clean_name}"
-    filename = f"{folder_name}/index.html"
-    
-    repo = "olriche/ai-factory-output" 
-    token = os.getenv("GITHUB_TOKEN")
-    url = f"https://api.github.com/repos/{repo}/contents/{filename}"
-    
-    encoded_content = base64.b64encode(content.encode('utf-8')).decode('utf-8')
-    headers = {"Authorization": f"token {token}"}
-    
-    # On vérifie si le fichier existe (peu probable avec la date)
+# --- CONFIGURATION ---
+USER = "olriche"
+REPO = "ai-factory-output"
+TOKEN = os.getenv("GITHUB_TOKEN")
+
+# --- FUNCTIONS ---
+def get_all_tools():
+    url = f"https://api.github.com/repos/{USER}/{REPO}/contents/"
+    headers = {"Authorization": f"token {TOKEN}"}
+    res = requests.get(url, headers=headers)
+    if res.status_code == 200:
+        return [f['name'] for f in res.json() if f['type'] == 'dir' and f['name'].startswith('20')]
+    return []
+
+def push_to_github(content, path, message):
+    url = f"https://api.github.com/repos/{USER}/{REPO}/contents/{path}"
+    headers = {"Authorization": f"token {TOKEN}"}
     r = requests.get(url, headers=headers)
     sha = r.json().get('sha') if r.status_code == 200 else None
-
-    payload = {"message": f"Nouveau SaaS: {idea_name}", "content": encoded_content, "branch": "main"}
+    encoded = base64.b64encode(content.encode('utf-8')).decode('utf-8')
+    payload = {"message": message, "content": encoded, "branch": "main"}
     if sha: payload["sha"] = sha
-
     res = requests.put(url, json=payload, headers=headers)
-    return res.status_code, folder_name
+    return res.status_code
 
-# --- AGENTS AVEC INSTRUCTIONS DE DESIGN PRO ---
-analyste = Agent(
-    role='Market Intelligence',
-    goal='Trouver un outil web simple qui résout un problème précis.',
-    backstory='Tu identifies des outils qui ont un fort potentiel de partage social.',
+# --- AGENTS (IN ENGLISH) ---
+expert_saas = Agent(
+    role='Global SaaS Strategist',
+    goal='Identify trending micro-tools for a global English-speaking audience.',
+    backstory='You are an expert in finding viral tools for Product Hunt and Hacker News.',
     llm=llm
 )
 
-codeur = Agent(
-    role='UX/UI Developer',
-    goal='Créer une application web Single-Page magnifique et responsive.',
-    backstory='''Tu es un expert en design moderne. 
-    Tu utilises systématiquement :
-    1. Tailwind CSS pour un design épuré (mode sombre/clair).
-    2. Des animations CSS fluides.
-    3. Une mise en page "App-like" avec une typographie soignée (Inter ou Sans-serif).
-    Ta réponse doit être uniquement le code HTML.''',
+designer = Agent(
+    role='Senior UI/UX Developer',
+    goal='Create stunning, professional web apps in English using Tailwind CSS.',
+    backstory='You specialize in clean, Apple-style minimal designs. You only output code.',
     llm=llm
 )
 
-# --- TASKS ---
+# --- WORKFLOW ---
+
+# 1. TOOL GENERATION (ENGLISH ONLY)
+print("🚀 Creating today's global tool...")
 t1 = Task(
-    description="Trouve une idée d'outil micro-SaaS utile aujourd'hui.",
-    expected_output="Un nom court et une description de l'outil.",
-    agent=analyste
+    description="Find a useful micro-tool idea and generate the complete HTML/JS code. ALL TEXT MUST BE IN ENGLISH.",
+    expected_output="Full professional HTML/JS code in English.",
+    agent=designer
 )
+crew_tool = Crew(agents=[designer], tasks=[t1])
+outil_code = str(crew_tool.kickoff()).replace('```html', '').replace('```', '').strip()
 
+# 2. CATEGORY CLASSIFICATION
+print("🏷️ Classifying the tool...")
 t2 = Task(
-    description="Code cet outil dans un fichier HTML unique. Inclus Tailwind CSS via CDN. L'outil doit être pro, dynamique et prêt à l'emploi.",
-    expected_output="Le code HTML complet.",
-    agent=codeur
+    description=f"Analyze the created tool and give it a one-word category in English (e.g., Marketing, Productivity, AI, Writing).",
+    expected_output="The category name in English.",
+    agent=expert_saas
 )
+crew_cat = Crew(agents=[expert_saas], tasks=[t2])
+categorie = str(crew_cat.kickoff()).strip()
 
-# --- EXECUTION ---
-crew = Crew(agents=[analyste, codeur], tasks=[t1, t2])
-resultat = crew.kickoff()
+# Deployment
+date_str = datetime.datetime.now().strftime("%Y-%m-%d")
+folder_name = f"{date_str}-{categorie.lower()}"
+push_to_github(outil_code, f"{folder_name}/index.html", f"New Global Tool: {categorie}")
 
-# Nettoyage et Envoi
-code_final = str(resultat).replace('```html', '').replace('```', '').strip()
-status, folder = deploy_to_web(code_final, "SaaS-" + datetime.datetime.now().strftime("%H%M"))
+# 3. UPDATE HUB WITH NEWSLETTER
+print("🎨 Updating the Global Hub with Newsletter...")
+outils_existants = get_all_tools()
+outils_str = ", ".join(outils_existants)
 
-if status in [200, 201]:
-    print(f"🚀 Business en ligne ! Accès ici : https://olriche.github.io/ai-factory-output/{folder}/")
-else:
-    print(f"❌ Erreur : {status}")
+t3 = Task(
+    description=f'''Create a modern index.html (Main Dashboard) in English.
+    1. Grid: Display these folders as clickable cards: {outils_str}.
+    2. Newsletter: Add a professional "Join the Newsletter" section to get notified of new daily tools.
+    3. UI: Include category filters and a search bar. Use a dark/light mode toggle if possible.''',
+    expected_output="The complete professional index.html code in English.",
+    agent=designer
+)
+crew_dash = Crew(agents=[designer], tasks=[t3])
+index_code = str(crew_dash.kickoff()).replace('```html', '').replace('```', '').strip()
+
+push_to_github(index_code, "index.html", "Update Dashboard with Newsletter")
+
+print(f"✅ Success! Portal live: https://{USER}.github.io/{REPO}/")
