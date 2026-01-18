@@ -1,107 +1,78 @@
-import os
-import requests
-import base64
+import os, requests, base64, datetime
 from crewai import Agent, Task, Crew
 from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
-import datetime
 
-
-# Configuration de l'IA
+load_dotenv()
 llm = ChatOpenAI(model="gpt-4o-mini")
 
-# --- FONCTION DE DEPLOIEMENT ROBUSTE ---
-def deploy_to_web(content, filename):
-    # FORCEZ LE NOM ICI POUR LE TEST
-    repo = "Olriche/ai-factory-output" 
-    token = os.getenv("GITHUB_TOKEN")
+# --- FONCTION DE DEPLOIEMENT MULTI-DOSSIERS ---
+def deploy_to_web(content, idea_name):
+    # Création d'un nom de dossier basé sur la date et l'idée
+    date_str = datetime.datetime.now().strftime("%Y-%m-%d")
+    clean_name = idea_name.lower().replace(" ", "-")[:15]
+    folder_name = f"{date_str}-{clean_name}"
+    filename = f"{folder_name}/index.html"
     
-    # On s'assure que le contenu est bien du texte pur
-    if hasattr(content, 'raw'):
-        clean_content = content.raw
-    else:
-        clean_content = str(content)
-
-    # Nettoyage des balises markdown si l'IA en a mis
-    if "```html" in clean_content:
-        clean_content = clean_content.split("```html")[1].split("```")[0]
-    elif "```" in clean_content:
-        clean_content = clean_content.split("```")[1].split("```")[0]
-
+    repo = "olriche/ai-factory-output" 
+    token = os.getenv("GITHUB_TOKEN")
     url = f"https://api.github.com/repos/{repo}/contents/{filename}"
     
-    # 1. Vérifier si le fichier existe pour récupérer son SHA
-    headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
-    get_res = requests.get(url, headers=headers)
+    encoded_content = base64.b64encode(content.encode('utf-8')).decode('utf-8')
+    headers = {"Authorization": f"token {token}"}
     
-    sha = None
-    if get_res.status_code == 200:
-        sha = get_res.json().get('sha')
+    # On vérifie si le fichier existe (peu probable avec la date)
+    r = requests.get(url, headers=headers)
+    sha = r.json().get('sha') if r.status_code == 200 else None
 
-    # 2. Préparer l'envoi
-    encoded_content = base64.b64encode(clean_content.encode('utf-8')).decode('utf-8')
-    
-    payload = {
-        "message": "Update index.html via AI Factory",
-        "content": encoded_content,
-        "branch": "main" # On force la branche main
-    }
-    if sha:
-        payload["sha"] = sha
+    payload = {"message": f"Nouveau SaaS: {idea_name}", "content": encoded_content, "branch": "main"}
+    if sha: payload["sha"] = sha
 
-    # 3. Envoyer
-    put_res = requests.put(url, json=payload, headers=headers)
-    
-    print(f"DEBUG: Status Code GitHub = {put_res.status_code}")
-    print(f"DEBUG: Response = {put_res.text}")
-    
-    return put_res.status_code
+    res = requests.put(url, json=payload, headers=headers)
+    return res.status_code, folder_name
 
-# --- AGENTS ---
+# --- AGENTS AVEC INSTRUCTIONS DE DESIGN PRO ---
 analyste = Agent(
-    role='Analyste de Marché',
-    goal='Trouver une idée de Micro-SaaS simple et virale',
-    backstory='Expert en détection de tendances Reddit et Product Hunt.',
-    llm=llm,
-    allow_delegation=False
+    role='Market Intelligence',
+    goal='Trouver un outil web simple qui résout un problème précis.',
+    backstory='Tu identifies des outils qui ont un fort potentiel de partage social.',
+    llm=llm
 )
 
 codeur = Agent(
-    role='Développeur Web',
-    goal='Créer un site web interactif dans un seul fichier HTML',
-    backstory='Expert en HTML5, Tailwind CSS et JavaScript moderne.',
-    llm=llm,
-    allow_delegation=False
+    role='UX/UI Developer',
+    goal='Créer une application web Single-Page magnifique et responsive.',
+    backstory='''Tu es un expert en design moderne. 
+    Tu utilises systématiquement :
+    1. Tailwind CSS pour un design épuré (mode sombre/clair).
+    2. Des animations CSS fluides.
+    3. Une mise en page "App-like" avec une typographie soignée (Inter ou Sans-serif).
+    Ta réponse doit être uniquement le code HTML.''',
+    llm=llm
 )
 
-# --- MISSIONS (Corrigées avec expected_output) ---
+# --- TASKS ---
 t1 = Task(
-    description="Analyse les tendances actuelles et propose une idée d'outil web simple (ex: calculateur, convertisseur, générateur).",
-    expected_output="Une description courte et un titre pour le projet.",
+    description="Trouve une idée d'outil micro-SaaS utile aujourd'hui.",
+    expected_output="Un nom court et une description de l'outil.",
     agent=analyste
 )
 
 t2 = Task(
-    description="Génère le code source complet d'un fichier index.html intégrant le design Tailwind CSS et la logique JavaScript pour l'idée proposée.",
-    expected_output="Le code HTML complet et fonctionnel uniquement.",
+    description="Code cet outil dans un fichier HTML unique. Inclus Tailwind CSS via CDN. L'outil doit être pro, dynamique et prêt à l'emploi.",
+    expected_output="Le code HTML complet.",
     agent=codeur
 )
 
-# --- LANCEMENT ---
+# --- EXECUTION ---
 crew = Crew(agents=[analyste, codeur], tasks=[t1, t2])
-resultat_brut = crew.kickoff() # Utilisation de kickoff() au lieu de start()
+resultat = crew.kickoff()
 
-# Conversion du résultat en texte pur
-code_final = str(resultat_brut)
-
-# Nettoyage si l'IA ajoute des balises ```html
-if "```html" in code_final:
-    code_final = code_final.split("```html")[1].split("```")[0]
-
-# --- DEPLOIEMENT ---
-status = deploy_to_web(code_final, "index.html")
+# Nettoyage et Envoi
+code_final = str(resultat).replace('```html', '').replace('```', '').strip()
+status, folder = deploy_to_web(code_final, "SaaS-" + datetime.datetime.now().strftime("%H%M"))
 
 if status in [200, 201]:
-    print("✅ Succès ! Votre business est en ligne.")
+    print(f"🚀 Business en ligne ! Accès ici : https://olriche.github.io/ai-factory-output/{folder}/")
 else:
-    print(f"❌ Erreur lors du déploiement. Code : {status}")
+    print(f"❌ Erreur : {status}")
