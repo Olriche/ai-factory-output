@@ -1,59 +1,73 @@
-
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EcoCalc - Calculateur d'Empreinte Carbone</title>
+    <title>Main Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <script defer>
-        function calculateCarbonFootprint() {
-            const transport = parseFloat(document.getElementById('transport').value) || 0;
-            const energy = parseFloat(document.getElementById('energy').value) || 0;
-            const food = parseFloat(document.getElementById('food').value) || 0;
-            const totalFootprint = (transport + energy + food).toFixed(2);
-            document.getElementById('result').innerHTML = `Votre empreinte carbone estimée est de <strong>${totalFootprint} kg CO2</strong> par an.`;
-            showAdvice(totalFootprint);
+    <style>
+        body {
+            transition: background-color 0.5s, color 0.5s;
         }
-
-        function showAdvice(footprint) {
-            const advice = document.getElementById('advice');
-            if (footprint > 15) {
-                advice.innerHTML = "Essayez de réduire votre empreinte en utilisant les transports en commun et en réduisant votre consommation d'énergie.";
-            } else {
-                advice.innerHTML = "Bonne nouvelle! Vous avez une empreinte carbone raisonnable. Continuez vos efforts!";
-            }
+        .dark-mode {
+            background-color: #1a202c;
+            color: white;
         }
-
-        function shareResults() {
-            const result = document.getElementById('result').innerText;
-            const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(result)}`;
-            window.open(url, '_blank');
-        }
-    </script>
+    </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
-    <div class="container mx-auto p-5">
-        <h1 class="text-3xl font-bold text-center mb-4">EcoCalc - Calculateur d'Empreinte Carbone</h1>
-        <p class="text-center mb-8">Entrez vos données pour calculer votre empreinte carbone.</p>
-        <div class="bg-white p-6 rounded-lg shadow-lg">
-            <div class="mb-4">
-                <label for="transport" class="block text-lg mb-2">Consommation de transport (kg CO2/an)</label>
-                <input type="number" id="transport" class="border-2 border-gray-300 p-2 w-full" placeholder="Ex: 10.5">
-            </div>
-            <div class="mb-4">
-                <label for="energy" class="block text-lg mb-2">Consommation d'énergie (kg CO2/an)</label>
-                <input type="number" id="energy" class="border-2 border-gray-300 p-2 w-full" placeholder="Ex: 5.6">
-            </div>
-            <div class="mb-4">
-                <label for="food" class="block text-lg mb-2">Habitudes alimentaires (kg CO2/an)</label>
-                <input type="number" id="food" class="border-2 border-gray-300 p-2 w-full" placeholder="Ex: 3.2">
-            </div>
-            <button onclick="calculateCarbonFootprint()" class="bg-green-500 text-white p-2 rounded-lg w-full">Calculer l'Empreinte</button>
+<body class="bg-gray-100 dark-mode:bg-gray-800">
+
+    <div class="container mx-auto p-6">
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-3xl font-bold">Dashboard</h1>
+            <button id="modeToggle" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow">Toggle Dark/Light Mode</button>
         </div>
-        <div id="result" class="mt-4 text-lg text-center"></div>
-        <div id="advice" class="mt-2 text-md text-center"></div>
-        <button onclick="shareResults()" class="mt-5 bg-blue-500 text-white p-2 rounded-lg">Partager sur Twitter</button>
+
+        <div class="mb-4">
+            <input type="text" id="searchInput" class="w-full border border-gray-300 rounded-md p-3 shadow-sm focus:ring focus:ring-blue-300" placeholder="Search...">
+        </div>
+
+        <div class="flex space-x-4 mb-6">
+            <button class="bg-blue-500 text-white px-4 py-2 rounded-lg">All</button>
+            <button class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">Category 1</button>
+            <button class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">Category 2</button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div class="bg-white dark:bg-gray-700 rounded-lg shadow p-4 cursor-pointer hover:shadow-lg transition-shadow" onclick="alert('2026-01-18-productivity')">
+                <h2 class="text-xl font-bold">2026-01-18-productivity</h2>
+            </div>
+            <div class="bg-white dark:bg-gray-700 rounded-lg shadow p-4 cursor-pointer hover:shadow-lg transition-shadow" onclick="alert('2026-01-18-saas-0505')">
+                <h2 class="text-xl font-bold">2026-01-18-saas-0505</h2>
+            </div>
+        </div>
+
+        <div class="mt-10 bg-white dark:bg-gray-700 p-6 rounded-lg shadow-lg">
+            <h2 class="text-xl font-bold mb-4">Join the Newsletter</h2>
+            <p class="mb-4">Subscribe to receive daily updates on new tools.</p>
+            <input type="email" class="w-full border border-gray-300 rounded-md p-2 shadow-sm focus:ring focus:ring-blue-300" placeholder="Enter your email">
+            <button class="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg">Subscribe</button>
+        </div>
     </div>
+
+    <script>
+        const modeToggle = document.getElementById('modeToggle');
+        const body = document.body;
+
+        modeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            modeToggle.textContent = body.classList.contains('dark-mode') ? 'Toggle Light Mode' : 'Toggle Dark Mode';
+        });
+        
+        const searchInput = document.getElementById('searchInput');
+        searchInput.addEventListener('input', (event) => {
+            const query = event.target.value.toLowerCase();
+            const cards = document.querySelectorAll('.grid div');
+            cards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                card.style.display = text.includes(query) ? '' : 'none';
+            });
+        });
+    </script>
 </body>
 </html>
