@@ -78,12 +78,21 @@ print("🎨 Updating the Global Hub with Newsletter...")
 outils_existants = get_all_tools()
 outils_str = ", ".join(outils_existants)
 
+# --- UPDATED TASK 3 WITH PREMIUM APPLE DESIGN ---
 t3 = Task(
-    description=f'''Create a modern index.html (Main Dashboard) in English.
-    1. Grid: Display these folders as clickable cards: {outils_str}.
-    2. Newsletter: Add a professional "Join the Newsletter" section to get notified of new daily tools.
-    3. UI: Include category filters and a search bar. Use a dark/light mode toggle if possible.''',
-    expected_output="The complete professional index.html code in English.",
+    description=f'''Create a world-class index.html (Main Hub) in English.
+    List these tools as interactive cards: {outils_str}.
+    
+    DESIGN SPECIFICATIONS:
+    1. AESTHETIC: Apple-inspired, minimal, futuristic. Use "Inter" font and a neutral palette (White/Charcoal).
+    2. GLASSMORPHISM: Cards must have a subtle blur backdrop, thin borders (border-white/20), and soft shadows.
+    3. HERO SECTION: Bold headline "The Future of Micro-Tools" with a glassmorphic CTA button.
+    4. ANIMATIONS: Use AOS (Animate On Scroll) or simple CSS keyframes for fade-in and slide-up effects.
+    5. INTERACTION: Hover effects on cards should include a subtle scale-up and increased glow.
+    6. SECTIONS: Include Hero, Tool Grid (with category filters), a "Why Us" section with minimalist icons, and a refined Newsletter footer.
+    
+    TECHNICAL: Use Tailwind CSS CDN and Lucide Icons. The code must be one single file.''',
+    expected_output="The complete premium Apple-style index.html source code.",
     agent=designer
 )
 crew_dash = Crew(agents=[designer], tasks=[t3])
