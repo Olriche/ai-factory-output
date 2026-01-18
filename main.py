@@ -4,6 +4,30 @@ import base64
 from crewai import Agent, Task, Crew
 from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
+import datetime
+
+# --- FONCTION DE DEPLOIEMENT AMÉLIORÉE ---
+def deploy_to_web(content, idea_name):
+    # On crée un nom de dossier propre (ex: 2026-01-17-generateur-bio)
+    date_str = datetime.datetime.now().strftime("%Y-%m-%d")
+    clean_name = idea_name.lower().replace(" ", "-")[:20]
+    folder_path = f"{date_str}-{clean_name}/index.html"
+    
+    repo = "VOTRE_PSEUDO_GITHUB/ai-factory-output" 
+    url = f"https://api.github.com/repos/{repo}/contents/{folder_path}"
+    token = os.getenv("GITHUB_TOKEN")
+    
+    # Encodage
+    encoded_content = base64.b64encode(content.encode()).decode()
+    
+    data = {
+        "message": f"Nouveau business : {idea_name}",
+        "content": encoded_content
+    }
+    
+    headers = {"Authorization": f"token {token}"}
+    response = requests.put(url, json=data, headers=headers)
+    return response.status_code, folder_path
 
 # Charger les variables d'environnement (GitHub Actions les injecte automatiquement)
 load_dotenv()
