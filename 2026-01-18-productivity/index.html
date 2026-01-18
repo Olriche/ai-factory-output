@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Timer</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f7fafc; /* Light background */
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center h-screen">
+    <div class="bg-white shadow-lg rounded-lg p-8 w-80">
+        <h1 class="text-2xl font-bold mb-4">Task Timer</h1>
+        <div class="mb-4">
+            <label for="taskInput" class="block text-sm font-medium text-gray-700">Task</label>
+            <input type="text" id="taskInput" class="mt-1 block w-full border border-gray-300 rounded-md p-2 shadow-sm focus:ring focus:ring-blue-300" placeholder="Enter your task...">
+        </div>
+        <div class="flex items-center justify-between mb-4">
+            <label for="timeInput" class="block text-sm font-medium text-gray-700">Duration (minutes)</label>
+            <input type="number" id="timeInput" min="1" class="mt-1 w-1/3 border border-gray-300 rounded-md p-2 shadow-sm focus:ring focus:ring-blue-300" placeholder="5">
+        </div>
+        <button id="startButton" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring focus:ring-blue-300">Start Timer</button>
+        <div id="timerDisplay" class="text-center text-xl font-semibold mt-4 hidden"></div>
+    </div>
+
+    <script>
+        const startButton = document.getElementById('startButton');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const taskInput = document.getElementById('taskInput');
+        const timeInput = document.getElementById('timeInput');
+        let timer;
+
+        startButton.addEventListener('click', () => {
+            const task = taskInput.value;
+            const duration = parseInt(timeInput.value);
+            if (!task || !duration) {
+                alert("Please enter a task and a valid duration.");
+                return;
+            }
+
+            startTimer(task, duration);
+        });
+
+        function startTimer(task, duration) {
+            clearInterval(timer);
+            let timeRemaining = duration * 60;
+
+            timerDisplay.classList.remove('hidden');
+            timerDisplay.textContent = `${task}: ${formatTime(timeRemaining)}`;
+            timer = setInterval(() => {
+                timeRemaining--;
+                timerDisplay.textContent = `${task}: ${formatTime(timeRemaining)}`;
+
+                if (timeRemaining <= 0) {
+                    clearInterval(timer);
+                    alert(`Time's up for "${task}"! 🎉`);
+                    timerDisplay.classList.add('hidden');
+                    taskInput.value = '';
+                    timeInput.value = '';
+                }
+            }, 1000);
+        }
+
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+    </script>
+</body>
+</html>
