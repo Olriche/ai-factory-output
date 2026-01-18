@@ -3,71 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Main Dashboard</title>
+    <title>The Future of Micro-Tools</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css" />
     <style>
         body {
-            transition: background-color 0.5s, color 0.5s;
+            font-family: 'Inter', sans-serif;
+            background-color: #f9f9f9;
         }
-        .dark-mode {
-            background-color: #1a202c;
-            color: white;
+        .glass {
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .card {
+            transition: transform 0.2s;
+        }
+        .card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .btn-glass {
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
     </style>
 </head>
-<body class="bg-gray-100 dark-mode:bg-gray-800">
+<body onload="AOS.init();">
+    <header class="bg-white glass p-8 mb-12 text-center mt-6 rounded-lg shadow-lg" data-aos="fade-up">
+        <h1 class="text-4xl font-bold text-gray-800">The Future of Micro-Tools</h1>
+        <a href="#toolGrid" class="inline-block mt-6 bg-white text-gray-800 rounded-lg px-6 py-3 btn-glass hover:bg-gray-100 transition">Explore Tools</a>
+    </header>
 
-    <div class="container mx-auto p-6">
-        <div class="flex items-center justify-between mb-6">
-            <h1 class="text-3xl font-bold">Dashboard</h1>
-            <button id="modeToggle" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow">Toggle Dark/Light Mode</button>
-        </div>
-
-        <div class="mb-4">
-            <input type="text" id="searchInput" class="w-full border border-gray-300 rounded-md p-3 shadow-sm focus:ring focus:ring-blue-300" placeholder="Search...">
-        </div>
-
-        <div class="flex space-x-4 mb-6">
-            <button class="bg-blue-500 text-white px-4 py-2 rounded-lg">All</button>
-            <button class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">Category 1</button>
-            <button class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">Category 2</button>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div class="bg-white dark:bg-gray-700 rounded-lg shadow p-4 cursor-pointer hover:shadow-lg transition-shadow" onclick="alert('2026-01-18-productivity')">
-                <h2 class="text-xl font-bold">2026-01-18-productivity</h2>
+    <main class="container mx-auto px-4">
+        <section id="toolGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+            <div class="card glass p-6 rounded-lg shadow-md" data-aos="fade-up">
+                <h2 class="text-xl font-semibold text-gray-800">Productivity Tool</h2>
+                <p class="text-gray-600">A tool designed to enhance your productivity with minimal distractions.</p>
+                <a href="#" class="block mt-4 text-blue-500 hover:underline">Learn More</a>
             </div>
-            <div class="bg-white dark:bg-gray-700 rounded-lg shadow p-4 cursor-pointer hover:shadow-lg transition-shadow" onclick="alert('2026-01-18-saas-0505')">
-                <h2 class="text-xl font-bold">2026-01-18-saas-0505</h2>
+            <div class="card glass p-6 rounded-lg shadow-md" data-aos="fade-up">
+                <h2 class="text-xl font-semibold text-gray-800">SaaS Tool</h2>
+                <p class="text-gray-600">An innovative SaaS tool for managing your business effectively.</p>
+                <a href="#" class="block mt-4 text-blue-500 hover:underline">Learn More</a>
             </div>
-        </div>
+        </section>
 
-        <div class="mt-10 bg-white dark:bg-gray-700 p-6 rounded-lg shadow-lg">
-            <h2 class="text-xl font-bold mb-4">Join the Newsletter</h2>
-            <p class="mb-4">Subscribe to receive daily updates on new tools.</p>
-            <input type="email" class="w-full border border-gray-300 rounded-md p-2 shadow-sm focus:ring focus:ring-blue-300" placeholder="Enter your email">
-            <button class="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg">Subscribe</button>
-        </div>
-    </div>
+        <section class="text-center mb-12">
+            <h2 class="text-2xl font-semibold mb-6">Why Us?</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                <div class="flex flex-col items-center">
+                    <div class="glass p-4 rounded-full shadow-md" data-aos="fade-up"><i class="lucide lucide-heart text-gray-800"></i></div>
+                    <p class="mt-2 text-gray-600">User-Centric</p>
+                </div>
+                <div class="flex flex-col items-center">
+                    <div class="glass p-4 rounded-full shadow-md" data-aos="fade-up"><i class="lucide lucide-star text-gray-800"></i></div>
+                    <p class="mt-2 text-gray-600">Top Rated</p>
+                </div>
+                <div class="flex flex-col items-center">
+                    <div class="glass p-4 rounded-full shadow-md" data-aos="fade-up"><i class="lucide lucide-layers text-gray-800"></i></div>
+                    <p class="mt-2 text-gray-600">Innovative</p>
+                </div>
+                <div class="flex flex-col items-center">
+                    <div class="glass p-4 rounded-full shadow-md" data-aos="fade-up"><i class="lucide lucide-check-circle text-gray-800"></i></div>
+                    <p class="mt-2 text-gray-600">Reliable</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-white glass p-8 text-center rounded-lg shadow-lg">
+        <h2 class="text-xl font-semibold">Stay Updated</h2>
+        <form class="mt-4">
+            <input type="email" placeholder="Enter your email" class="rounded w-2/3 p-2" />
+            <button type="submit" class="ml-2 bg-blue-500 text-white rounded px-4 py-2 btn-glass">Subscribe</button>
+        </form>
+    </footer>
 
     <script>
-        const modeToggle = document.getElementById('modeToggle');
-        const body = document.body;
-
-        modeToggle.addEventListener('click', () => {
-            body.classList.toggle('dark-mode');
-            modeToggle.textContent = body.classList.contains('dark-mode') ? 'Toggle Light Mode' : 'Toggle Dark Mode';
-        });
-        
-        const searchInput = document.getElementById('searchInput');
-        searchInput.addEventListener('input', (event) => {
-            const query = event.target.value.toLowerCase();
-            const cards = document.querySelectorAll('.grid div');
-            cards.forEach(card => {
-                const text = card.textContent.toLowerCase();
-                card.style.display = text.includes(query) ? '' : 'none';
-            });
-        });
+        AOS.init();
     </script>
 </body>
 </html>
