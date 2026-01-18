@@ -4,124 +4,169 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SaaS App</title>
-    <!-- Tailwind CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2/dist/tailwind.min.css" rel="stylesheet">
-    <!-- Supabase JS Client -->
+    <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- FontAwesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
     <style>
         body {
-            font-family: 'SF Pro Text', -apple-system, 'Helvetica Neue', 'Arial', sans-serif;
-        }
-        .glass {
-            backdrop-filter: blur(20px);
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 1rem;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-            transition: all 0.3s ease;
+            font-family: 'San Francisco', Arial, sans-serif;
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
         }
         .hidden {
             display: none;
         }
+        .visible {
+            display: block;
+        }
+        .transition-transform {
+            transition: transform 0.3s ease-in-out;
+        }
     </style>
 </head>
-<body class="bg-gray-100">
-
-<div id="auth" class="flex justify-center items-center h-screen glass p-10">
-    <div class="max-w-sm">
-        <h1 class="text-3xl font-extrabold mb-6 text-center">Welcome</h1>
-        <form id="authForm" class="space-y-4">
-            <div>
-                <label for="email" class="block text-sm font-medium">Email</label>
-                <input type="email" id="email" class="mt-1 p-2 w-full border rounded-md" required>
+<body>
+    <!-- Auth UI -->
+    <div id="auth" class="h-screen flex items-center justify-center">
+        <div class="bg-white shadow-lg rounded-lg p-10">
+            <h1 class="text-xl font-bold mb-4 text-center">Welcome to SaaS App</h1>
+            <div id="auth-ui">
+                <div id="login-form" class="text-center mb-4">
+                    <h1 class="text-xl font-semibold mb-2">Log In</h1>
+                    <input type="email" id="login-email" placeholder="Email" class="border rounded-lg p-2 w-full mb-2">
+                    <input type="password" id="login-password" placeholder="Password" class="border rounded-lg p-2 w-full">
+                    <button id="login-button" class="bg-blue-500 text-white py-2 mt-4 rounded-lg w-full hover:bg-blue-700 transition-transform">Log In</button>
+                </div>
+                <div id="signup-form" class="text-center hidden mb-4">
+                    <h1 class="text-xl font-semibold mb-2">Sign Up</h1>
+                    <input type="email" id="signup-email" placeholder="Email" class="border rounded-lg p-2 w-full mb-2">
+                    <input type="password" id="signup-password" placeholder="Password" class="border rounded-lg p-2 w-full">
+                    <button id="signup-button" class="bg-green-500 text-white py-2 mt-4 rounded-lg w-full hover:bg-green-700 transition-transform">Sign Up</button>
+                </div>
+                <button id="toggle-auth" class="text-sm text-blue-500 hover:text-blue-700 transition">Switch to Sign Up</button>
             </div>
-            <div>
-                <label for="password" class="block text-sm font-medium">Password</label>
-                <input type="password" id="password" class="mt-1 p-2 w-full border rounded-md" required>
-            </div>
-            <div class="text-center">
-                <button type="submit" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-full hover:bg-blue-600 transition">Log In</button>
-            </div>
-        </form>
+        </div>
     </div>
-</div>
 
-<div id="app" class="hidden p-10">
-    <h1 class="text-4xl font-bold mb-4 glass p-4">Dashboard</h1>
-    <button id="logout" class="bg-red-500 text-white font-bold py-2 px-4 rounded-full mb-4">Log Out</button>
-    <div>
-        <h2 class="font-medium text-2xl mb-2">Your Items</h2>
-        <ul id="itemsList" class="list-disc pl-5 mb-4">
-            <!-- Items will be populated here -->
-        </ul>
-        <form id="addItemForm" class="flex space-x-2">
-            <input type="text" id="newItem" placeholder="New Item" class="p-2 border rounded-md w-full" required>
-            <button type="submit" class="bg-green-500 text-white font-bold px-4 rounded-full">Add</button>
-        </form>
+    <!-- App Content -->
+    <div id="app" class="hidden h-screen flex flex-col items-center justify-center">
+        <h1 class="text-4xl font-bold mb-10">Welcome, <span id="user-name"></span>!</h1>
+        <div class="bg-white shadow-lg rounded-lg p-5 w-1/2">
+            <h2 class="text-xl font-semibold mb-4">Your Items</h2>
+            <ul id="item-list" class="mb-4">
+                <!-- Dynamic Items -->
+            </ul>
+            <input type="text" id="new-item" placeholder="New Item" class="border rounded-lg p-2 w-full mb-2">
+            <button id="add-item-button" class="bg-blue-500 text-white py-2 rounded-lg w-full hover:bg-blue-700 transition-transform">Add Item</button>
+        </div>
+        <button id="logout-button" class="mt-5 bg-red-500 text-white py-2 px-5 rounded-lg hover:bg-red-700 transition-transform">Log Out</button>
     </div>
-</div>
 
-<script>
-    const supabaseUrl = 'None';
-    const supabaseAnonKey = 'None';
-    const supabase = Supabase.createClient(supabaseUrl, supabaseAnonKey);
+    <script>
+        const supabase = supabase.createClient('None', 'None');
 
-    async function checkAuth() {
-        const user = supabase.auth.user();
-        if (user) {
-            // Load user data
+        function showAuthUI() {
+            document.getElementById('auth').classList.remove('hidden');
+            document.getElementById('app').classList.add('hidden');
+        }
+
+        function showAppUI(user) {
             document.getElementById('auth').classList.add('hidden');
             document.getElementById('app').classList.remove('hidden');
-            const { data, error } = await supabase.from('items').select('*').eq('user_id', user.id);
-            if (error) console.log('Error:', error);
-            else {
-                const listEle = document.getElementById('itemsList');
-                listEle.innerHTML = '';
-                data.forEach(item => {
-                    const itemNode = document.createElement('li');
-                    itemNode.textContent = item.name;
-                    listEle.appendChild(itemNode);
+            document.getElementById('user-name').textContent = user.email;
+            fetchItems();
+        }
+
+        async function handleLogin() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const { user, error } = await supabase.auth.signIn({ email, password });
+            if (error) {
+                alert(error.message);
+            } else {
+                showAppUI(user);
+            }
+        }
+
+        async function handleSignUp() {
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            const { user, error } = await supabase.auth.signUp({ email, password });
+            if (error) {
+                alert(error.message);
+            } else {
+                showAppUI(user);
+            }
+        }
+
+        async function handleLogout() {
+            await supabase.auth.signOut();
+            showAuthUI();
+        }
+
+        async function fetchItems() {
+            const { data: items, error } = await supabase.from('items').select('*');
+            if (error) {
+                alert(error.message);
+            } else {
+                const itemList = document.getElementById('item-list');
+                itemList.innerHTML = '';
+                items.forEach(item => {
+                    const li = document.createElement('li');
+                    li.textContent = item.name;
+                    li.classList.add('flex', 'justify-between', 'items-center', 'mb-2');
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'Delete';
+                    deleteButton.classList.add('text-red-500', 'hover:text-red-700');
+                    deleteButton.onclick = () => deleteItem(item.id);
+                    li.appendChild(deleteButton);
+                    itemList.appendChild(li);
                 });
             }
-        } else {
-            document.getElementById('app').classList.add('hidden');
-            document.getElementById('auth').classList.remove('hidden');
         }
-    }
 
-    document.getElementById('authForm').onsubmit = async (event) => {
-        event.preventDefault();
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const { user, error } = await supabase.auth.signIn({ email, password });
-        if (error) alert('Error logging in:', error.message);
-        else checkAuth();
-    };
-
-    document.getElementById('logout').onclick = async () => {
-        await supabase.auth.signOut();
-        checkAuth();
-    };
-
-    document.getElementById('addItemForm').onsubmit = async (event) => {
-        event.preventDefault();
-        const newItem = document.getElementById('newItem').value;
-        const user = supabase.auth.user();
-        if (user) {
-            const { data, error } = await supabase.from('items').insert([{ name: newItem, user_id: user.id }]);
-            if (error) alert('Error adding item:', error.message);
-            else {
-                document.getElementById('newItem').value = '';
-                checkAuth();
+        async function addItem() {
+            const itemName = document.getElementById('new-item').value;
+            const { data, error } = await supabase.from('items').insert([{ name: itemName }]);
+            if (error) {
+                alert(error.message);
+            } else {
+                fetchItems();
+                document.getElementById('new-item').value = '';
             }
         }
-    };
 
-    checkAuth();
-</script>
+        async function deleteItem(id) {
+            const { error } = await supabase.from('items').delete().eq('id', id);
+            if (error) {
+                alert(error.message);
+            } else {
+                fetchItems();
+            }
+        }
 
+        // Event listeners
+        document.getElementById('login-button').onclick = handleLogin;
+        document.getElementById('signup-button').onclick = handleSignUp;
+        document.getElementById('logout-button').onclick = handleLogout;
+        document.getElementById('add-item-button').onclick = addItem;
+        document.getElementById('toggle-auth').onclick = () => {
+            const isLogin = document.getElementById('login-form').classList.contains('hidden');
+            document.getElementById('login-form').classList.toggle('hidden', !isLogin);
+            document.getElementById('signup-form').classList.toggle('hidden', isLogin);
+            document.getElementById('toggle-auth').textContent = isLogin ? 'Switch to Sign Up' : 'Switch to Log In';
+        };
+
+        // Check auth state on load
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (session && session.user) {
+                showAppUI(session.user);
+            } else {
+                showAuthUI();
+            }
+        });
+    </script>
 </body>
 </html>
 
-The above HTML file incorporates Tailwind CSS for the sleek design, Supabase for backend functions, and FontAwesome for UI icons. It initializes Supabase with placeholders for `SUPABASE_URL` and `SUPABASE_ANON_KEY`, leading to a sustainable SaaS UI/UX that matches the iOS 18 style, complete with smooth animations and glassmorphic design. The JavaScript handles authentication and CRUD operations, ensuring a fully functional web app once configured with valid Supabase credentials.
+
+This HTML file incorporates Tailwind CSS for styling, Supabase for backend logic, and Font Awesome for any additional icons needed. It includes a modern, sleek login/signup form and an authenticated section to add/delete user items with all states handled via JS logic.
