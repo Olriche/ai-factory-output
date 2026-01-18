@@ -13,7 +13,7 @@ llm = ChatOpenAI(model="gpt-4o-mini")
 # --- FONCTION DE DEPLOIEMENT ROBUSTE ---
 def deploy_to_web(content, filename):
     # FORCEZ LE NOM ICI POUR LE TEST
-    repo = "VOTRE_PSEUDO_GITHUB/ai-factory-output" 
+    repo = "Olriche/ai-factory-output" 
     token = os.getenv("GITHUB_TOKEN")
     
     # On s'assure que le contenu est bien du texte pur
