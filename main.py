@@ -6,58 +6,56 @@ from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
 import datetime
 
-# --- FONCTION DE DEPLOIEMENT AMÉLIORÉE ---
-def deploy_to_web(content, idea_name):
-    # On crée un nom de dossier propre (ex: 2026-01-17-generateur-bio)
-    date_str = datetime.datetime.now().strftime("%Y-%m-%d")
-    clean_name = idea_name.lower().replace(" ", "-")[:20]
-    folder_path = f"{date_str}-{clean_name}/index.html"
-    
-    repo = "VOTRE_PSEUDO_GITHUB/ai-factory-output" 
-    url = f"https://api.github.com/repos/{repo}/contents/{folder_path}"
-    token = os.getenv("GITHUB_TOKEN")
-    
-    # Encodage
-    encoded_content = base64.b64encode(content.encode()).decode()
-    
-    data = {
-        "message": f"Nouveau business : {idea_name}",
-        "content": encoded_content
-    }
-    
-    headers = {"Authorization": f"token {token}"}
-    response = requests.put(url, json=data, headers=headers)
-    return response.status_code, folder_path
-
-# Charger les variables d'environnement (GitHub Actions les injecte automatiquement)
-load_dotenv()
 
 # Configuration de l'IA
 llm = ChatOpenAI(model="gpt-4o-mini")
 
-# --- FONCTION DE DEPLOIEMENT ---
+# --- FONCTION DE DEPLOIEMENT ROBUSTE ---
 def deploy_to_web(content, filename):
-    # Remplacez bien par votre pseudo GitHub réel
+    # FORCEZ LE NOM ICI POUR LE TEST
     repo = "VOTRE_PSEUDO_GITHUB/ai-factory-output" 
-    url = f"https://api.github.com/repos/{repo}/contents/{filename}"
     token = os.getenv("GITHUB_TOKEN")
     
-    # Récupérer le SHA du fichier s'il existe déjà (nécessaire pour la mise à jour)
-    get_res = requests.get(url, headers={"Authorization": f"token {token}"})
-    sha = get_res.json().get('sha') if get_res.status_code == 200 else None
+    # On s'assure que le contenu est bien du texte pur
+    if hasattr(content, 'raw'):
+        clean_content = content.raw
+    else:
+        clean_content = str(content)
 
-    encoded_content = base64.b64encode(content.encode()).decode()
+    # Nettoyage des balises markdown si l'IA en a mis
+    if "```html" in clean_content:
+        clean_content = clean_content.split("```html")[1].split("```")[0]
+    elif "```" in clean_content:
+        clean_content = clean_content.split("```")[1].split("```")[0]
+
+    url = f"https://api.github.com/repos/{repo}/contents/{filename}"
     
-    data = {
-        "message": "Mise à jour automatique du Micro-SaaS",
-        "content": encoded_content
+    # 1. Vérifier si le fichier existe pour récupérer son SHA
+    headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
+    get_res = requests.get(url, headers=headers)
+    
+    sha = None
+    if get_res.status_code == 200:
+        sha = get_res.json().get('sha')
+
+    # 2. Préparer l'envoi
+    encoded_content = base64.b64encode(clean_content.encode('utf-8')).decode('utf-8')
+    
+    payload = {
+        "message": "Update index.html via AI Factory",
+        "content": encoded_content,
+        "branch": "main" # On force la branche main
     }
     if sha:
-        data["sha"] = sha # Indique à GitHub qu'on écrase l'ancien fichier
+        payload["sha"] = sha
+
+    # 3. Envoyer
+    put_res = requests.put(url, json=payload, headers=headers)
     
-    headers = {"Authorization": f"token {token}"}
-    response = requests.put(url, json=data, headers=headers)
-    return response.status_code
+    print(f"DEBUG: Status Code GitHub = {put_res.status_code}")
+    print(f"DEBUG: Response = {put_res.text}")
+    
+    return put_res.status_code
 
 # --- AGENTS ---
 analyste = Agent(
