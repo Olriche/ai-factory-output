@@ -1,23 +1,29 @@
-import os, requests, base64, datetime
+import os, requests, base64, datetime, json
 from crewai import Agent, Task, Crew
 from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
-llm = ChatOpenAI(model="gpt-4o-mini")
 
-# --- CONFIGURATION ---
-USER = "olriche"
+# --- CONFIGURATION (MODÈLE GPT-4o POUR L'INTELLIGENCE MAXIMALE) ---
+llm = ChatOpenAI(model="gpt-4o")
+
+# REMPLACEZ VOTRE_PSEUDO ICI
+USER = "VOTRE_PSEUDO"
 REPO = "ai-factory-output"
-TOKEN = os.getenv("GITHUB_TOKEN")
 
-# --- FUNCTIONS ---
-def get_all_tools():
+# SECRETS (Doivent être dans GitHub Settings)
+TOKEN = os.getenv("GITHUB_TOKEN")
+SUP_URL = os.getenv("SUPABASE_URL")
+SUP_KEY = os.getenv("SUPABASE_KEY")
+
+# --- FONCTIONS SYSTÈME ---
+def get_existing_tools():
     url = f"https://api.github.com/repos/{USER}/{REPO}/contents/"
     headers = {"Authorization": f"token {TOKEN}"}
     res = requests.get(url, headers=headers)
     if res.status_code == 200:
-        return [f['name'] for f in res.json() if f['type'] == 'dir' and f['name'].startswith('20')]
+        return [f['name'] for f in res.json() if f['type'] == 'dir' and f['name'][0].isdigit()]
     return []
 
 def push_to_github(content, path, message):
@@ -25,79 +31,128 @@ def push_to_github(content, path, message):
     headers = {"Authorization": f"token {TOKEN}"}
     r = requests.get(url, headers=headers)
     sha = r.json().get('sha') if r.status_code == 200 else None
-    encoded = base64.b64encode(content.encode('utf-8')).decode('utf-8')
+    
+    # Nettoyage ultime du code si l'IA laisse des balises markdown
+    clean_content = str(content).replace('```html', '').replace('```sql', '').replace('```', '').strip()
+    
+    encoded = base64.b64encode(clean_content.encode('utf-8')).decode('utf-8')
     payload = {"message": message, "content": encoded, "branch": "main"}
     if sha: payload["sha"] = sha
     res = requests.put(url, json=payload, headers=headers)
     return res.status_code
 
-# --- AGENTS (IN ENGLISH) ---
-expert_saas = Agent(
-    role='Global SaaS Strategist',
-    goal='Identify trending micro-tools for a global English-speaking audience.',
-    backstory='You are an expert in finding viral tools for Product Hunt and Hacker News.',
+# --- L'ÉQUIPE D'ÉLITE (AGENTS) ---
+
+architect = Agent(
+    role='SaaS Architect & Database Engineer',
+    goal='Design secure, scalable database schemas and authentication flows.',
+    backstory='You are an expert in Supabase, SQL, and Row Level Security (RLS). You structure apps where users own their data.',
     llm=llm
 )
 
-designer = Agent(
-    role='Senior UI/UX Developer',
-    goal='Create stunning, professional web apps in English using Tailwind CSS.',
-    backstory='You specialize in clean, Apple-style minimal designs. You only output code.',
+product_manager = Agent(
+    role='Product Visionary',
+    goal='Identify high-value SaaS ideas (B2B or B2C) that require user login.',
+    backstory='You find gaps in the market for tools like "Personal CRM", "Habit Gamification", or "AI Prompts Manager".',
     llm=llm
 )
 
-# --- WORKFLOW ---
+apple_dev = Agent(
+    role='Lead Frontend Engineer (Apple Style)',
+    goal='Code the interface using Tailwind CSS, Supabase JS Client, and Auth logic.',
+    backstory='''You build interfaces that look like iOS 18. 
+    You manage the Logic: Login, Sign Up, Logout, and CRUD operations.
+    You manage the Design: Glassmorphism, San Francisco fonts, Smooth animations.''',
+    llm=llm
+)
 
-# 1. TOOL GENERATION (ENGLISH ONLY)
-print("🚀 Creating today's global tool...")
+growth_hacker = Agent(
+    role='CMO & SEO Strategist',
+    goal='Write viral launch content and optimize SEO.',
+    backstory='You write hooks that make people click immediately.',
+    llm=llm
+)
+
+# --- LE WORKFLOW DE L'USINE ---
+
+# 1. IDÉE & STRUCTURE DE DONNÉES
+print("🧠 Conception du SaaS et de la Base de Données...")
 t1 = Task(
-    description="Find a useful micro-tool idea and generate the complete HTML/JS code. ALL TEXT MUST BE IN ENGLISH.",
-    expected_output="Full professional HTML/JS code in English.",
-    agent=designer
+    description=f'''Imagine a new useful SaaS tool that NEEDS a login (e.g., to save user preferences, lists, or projects).
+    1. Define the concept (Title, one-line pitch).
+    2. Write the SQL code to create the table in Supabase. Include RLS policies so users only see THEIR data.
+    Format: The output must be the SQL code only.''',
+    expected_output="SQL query to set up the database.",
+    agent=architect
 )
-crew_tool = Crew(agents=[designer], tasks=[t1])
-outil_code = str(crew_tool.kickoff()).replace('```html', '').replace('```', '').strip()
+crew_arch = Crew(agents=[architect, product_manager], tasks=[t1])
+sql_schema = str(crew_arch.kickoff())
 
-# 2. CATEGORY CLASSIFICATION
-print("🏷️ Classifying the tool...")
+# 2. DÉVELOPPEMENT DE L'APPLICATION (AVEC LOGIN)
+print("💻 Développement de l'interface Apple-Style avec Login...")
 t2 = Task(
-    description=f"Analyze the created tool and give it a one-word category in English (e.g., Marketing, Productivity, AI, Writing).",
-    expected_output="The category name in English.",
-    agent=expert_saas
+    description=f'''Create the full `index.html` file for this SaaS.
+    
+    TECH STACK:
+    - Tailwind CSS (via CDN)
+    - Supabase JS Client (via CDN: [https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2](https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2))
+    - FontAwesome or Lucide Icons
+    
+    REQUIREMENTS:
+    1. **Config**: Initialize Supabase with PROJECT_URL: "{SUP_URL}" and ANON_KEY: "{SUP_KEY}".
+    2. **Auth UI**: Create a beautiful sleek Login/Sign-up form. Hide the app content until logged in.
+    3. **Logic**: When logged in, fetch and display user's data from the database. Allow adding/deleting items.
+    4. **Design**: iOS 18 Aesthetic. Large blurry headers, rounded cards, subtle shadows, smooth transitions.
+    5. **Language**: English (Global Market).
+    
+    Output: ONLY the raw HTML code.''',
+    expected_output="Complete functional HTML/JS code.",
+    agent=apple_dev
 )
-crew_cat = Crew(agents=[expert_saas], tasks=[t2])
-categorie = str(crew_cat.kickoff()).strip()
+crew_dev = Crew(agents=[apple_dev], tasks=[t2])
+app_code = str(crew_dev.kickoff())
 
-# Deployment
-date_str = datetime.datetime.now().strftime("%Y-%m-%d")
-folder_name = f"{date_str}-{categorie.lower()}"
-push_to_github(outil_code, f"{folder_name}/index.html", f"New Global Tool: {categorie}")
-
-# 3. UPDATE HUB WITH NEWSLETTER
-print("🎨 Updating the Global Hub with Newsletter...")
-outils_existants = get_all_tools()
-outils_str = ", ".join(outils_existants)
-
-# --- UPDATED TASK 3 WITH PREMIUM APPLE DESIGN ---
+# 3. MARKETING & SEO
+print("🚀 Génération du Marketing Kit...")
 t3 = Task(
-    description=f'''Create a world-class index.html (Main Hub) in English.
-    List these tools as interactive cards: {outils_str}.
-    
-    DESIGN SPECIFICATIONS:
-    1. AESTHETIC: Apple-inspired, minimal, futuristic. Use "Inter" font and a neutral palette (White/Charcoal).
-    2. GLASSMORPHISM: Cards must have a subtle blur backdrop, thin borders (border-white/20), and soft shadows.
-    3. HERO SECTION: Bold headline "The Future of Micro-Tools" with a glassmorphic CTA button.
-    4. ANIMATIONS: Use AOS (Animate On Scroll) or simple CSS keyframes for fade-in and slide-up effects.
-    5. INTERACTION: Hover effects on cards should include a subtle scale-up and increased glow.
-    6. SECTIONS: Include Hero, Tool Grid (with category filters), a "Why Us" section with minimalist icons, and a refined Newsletter footer.
-    
-    TECHNICAL: Use Tailwind CSS CDN and Lucide Icons. The code must be one single file.''',
-    expected_output="The complete premium Apple-style index.html source code.",
-    agent=designer
+    description="Write a 'Launch Kit' containing: 1. SEO Meta Title & Description. 2. A Viral Twitter Thread (3 tweets). 3. A LinkedIn Post focusing on the problem/solution.",
+    expected_output="Text content for marketing.",
+    agent=growth_hacker
 )
-crew_dash = Crew(agents=[designer], tasks=[t3])
-index_code = str(crew_dash.kickoff()).replace('```html', '').replace('```', '').strip()
+crew_growth = Crew(agents=[growth_hacker], tasks=[t3])
+marketing_content = str(crew_growth.kickoff())
 
-push_to_github(index_code, "index.html", "Update Dashboard with Newsletter")
+# 4. DÉPLOIEMENT DU NOUVEL OUTIL
+date_str = datetime.datetime.now().strftime("%Y-%m-%d")
+# On extrait le nom du projet depuis le code ou on génère un nom générique
+tool_name = f"{date_str}-saas-app"
+folder_path = f"{tool_name}"
 
-print(f"✅ Success! Portal live: https://{USER}.github.io/{REPO}/")
+print(f"📦 Déploiement dans le dossier : {folder_path}")
+push_to_github(sql_schema, f"{folder_path}/setup_database.sql", "SQL Schema for Supabase")
+push_to_github(app_code, f"{folder_path}/index.html", "New AI SaaS App")
+push_to_github(marketing_content, f"{folder_path}/marketing_kit.txt", "Marketing Content")
+
+# 5. MISE À JOUR DU HUB CENTRAL (DASHBOARD)
+print("💎 Mise à jour du Hub Principal...")
+tools_list = get_existing_tools()
+tools_str = ", ".join(tools_list)
+
+t4 = Task(
+    description=f'''Update the main `index.html` of the repository.
+    Create a "SaaS App Store" looking landing page.
+    1. Hero Section: "AI Software Suite".
+    2. Grid: Display these folders as Apps: {tools_str}.
+    3. Add a "New" badge on the latest tool ({tool_name}).
+    4. Design: Apple.com homepage style (Black/White/Gray, huge typography, parallax).
+    ''',
+    expected_output="HTML code for the main hub.",
+    agent=apple_dev
+)
+crew_hub = Crew(agents=[apple_dev], tasks=[t4])
+hub_code = str(crew_hub.kickoff())
+
+push_to_github(hub_code, "index.html", "Update Main Hub")
+
+print(f"✅ SUCCÈS TOTAL ! Votre nouvel empire est à jour : https://{USER}.github.io/{REPO}/")
+print(f"⚠️ IMPORTANT : Allez dans le dossier '{folder_path}' sur GitHub, ouvrez 'setup_database.sql' et exécutez le code dans l'éditeur SQL de Supabase pour faire fonctionner le nouvel outil.")
