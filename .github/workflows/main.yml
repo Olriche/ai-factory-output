@@ -1,0 +1,27 @@
+name: Lancer l'Usine à Business
+on:
+  schedule:
+    - cron: '0 0 * * *' # Se lance tous les jours à minuit
+  workflow_dispatch: # Permet de le lancer à la main pour tester
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v3
+
+      - name: Installer Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Installer les outils
+        run: pip install -r requirements.txt
+
+      - name: Exécuter l'IA
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: python main.py
