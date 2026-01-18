@@ -9,7 +9,7 @@ load_dotenv()
 llm = ChatOpenAI(model="gpt-4o")
 
 # REMPLACEZ VOTRE_PSEUDO ICI
-USER = "VOTRE_PSEUDO"
+USER = "olriche"
 REPO = "ai-factory-output"
 
 # SECRETS (Doivent être dans GitHub Settings)
